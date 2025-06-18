@@ -17,7 +17,8 @@ Notes adalah aplikasi web sederhana untuk membuat dan menyimpan catatan secara o
 
 📱 Responsif dan cocok di perangkat mobile
 
-📁 Struktur Proyek
+## 📁 Struktur Proyek
+
 📁 public/
  └── index.html       // Main utama
 .firebaserc           // Konfigurasi Firebase project
