@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Daily Notes</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .journal-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .journal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .journal-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .journal-card .card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .journal-card .card-text {
+            color: #6c757d;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .journal-card .card-footer {
+            background-color: rgba(0,0,0,0.03);
+            border-top: none;
+            font-size: 0.85rem;
+        }
+
+        .journal-content {
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .mood-selector .btn {
+            padding: 0.375rem 0.75rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .journal-card {
+                margin-bottom: 15px;
+            }
+            
+            .navbar-brand {
+                font-size: 1rem;
+            }
+        }
+
+        /* Animation for entry cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .entry-card {
+            animation: fadeIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Delay animations for each card */
+        .entry-card:nth-child(1) { animation-delay: 0.1s; }
+        .entry-card:nth-child(2) { animation-delay: 0.2s; }
+        .entry-card:nth-child(3) { animation-delay: 0.3s; }
+        .entry-card:nth-child(4) { animation-delay: 0.4s; }
+        .entry-card:nth-child(5) { animation-delay: 0.5s; }
+        
+        /* Admin specific styles */
+        .admin-only {
+            display: none;
+        }
+    </style>
+    <!-- Favicon -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3281/3281289.png" type="image/png">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-book-open me-2"></i>Daily Notes
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item" id="nav-home">
+                        <a class="nav-link" href="#"><i class="fas fa-home me-1"></i> Home</a>
+                    </li>
+                    <li class="nav-item" id="nav-new">
+                        <a class="nav-link" href="#"><i class="fas fa-plus me-1"></i> New Entry</a>
+                    </li>
+                    <li class="nav-item admin-only" id="nav-admin">
+                        <a class="nav-link" href="#"><i class="fas fa-users-cog me-1"></i> Admin</a>
+                    </li>
+                    <li class="nav-item dropdown" id="nav-user">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i> <span id="username-display">Guest</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li id="auth-links">
+                                <a class="dropdown-item" href="#" id="login-link"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
+                                <a class="dropdown-item" href="#" id="register-link"><i class="fas fa-user-plus me-1"></i> Register</a>
+                            </li>
+                            <li id="user-actions" style="display: none;">
+                                <a class="dropdown-item" href="#" id="profile-link"><i class="fas fa-cog me-1"></i> Profile</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" id="logout-link"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Auth Modals -->
+        <div id="auth-modals">
+            <!-- Login Modal -->
+            <div class="modal fade" id="loginModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-sign-in-alt me-2"></i>Login</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="login-form">
+                                <div class="mb-3">
+                                    <label for="login-email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="login-email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="login-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="login-password" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Login</button>
+                                </div>
+                            </form>
+                            <div class="text-center mt-3">
+                                <p>Don't have an account? <a href="#" id="show-register">Register</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register Modal -->
+            <div class="modal fade" id="registerModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Register</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="register-form">
+                                <div class="mb-3">
+                                    <label for="register-name" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="register-name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="register-email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="register-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-confirm" class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" id="register-confirm" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Register as:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="register-role" id="role-user" value="user" checked>
+                                        <label class="form-check-label" for="role-user">Regular User</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="register-role" id="role-admin" value="admin">
+                                        <label class="form-check-label" for="role-admin">Administrator</label>
+                                    </div>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success">Register</button>
+                                </div>
+                            </form>
+                            <div class="text-center mt-3">
+                                <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reminder Modal -->
+            <div class="modal fade" id="reminderModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title"><i class="fas fa-bell me-2"></i>Set Reminder</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="reminder-form">
+                                <div class="mb-3">
+                                    <label for="reminder-date" class="form-label">Reminder Date & Time</label>
+                                    <input type="datetime-local" class="form-control" id="reminder-date" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reminder-message" class="form-label">Message</label>
+                                    <textarea class="form-control" id="reminder-message" rows="3"></textarea>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-info">Set Reminder</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Modal -->
+            <div class="modal fade" id="profileModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-user me-2"></i>My Profile</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="profile-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="profile-name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="profile-email" disabled>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Role</label>
+                                    <input type="text" class="form-control" id="profile-role" disabled>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journal Content -->
+        <div id="journal-content">
+            <!-- Admin View -->
+            <div id="admin-view" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-users-cog me-2"></i>Admin Dashboard</h2>
+                    <button class="btn btn-outline-secondary" id="back-to-home">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Journal
+                    </button>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-users me-2"></i>User Management
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Users will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-book me-2"></i>All Notes Entries
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="all-entries-table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>User</th>
+                                        <th>Date</th>
+                                        <th>Category</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- All entries will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Home/List View -->
+            <div id="home-view">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-book me-2"></i>My Notes Entries</h2>
+                    <button class="btn btn-primary" id="new-entry-btn">
+                        <i class="fas fa-plus me-1"></i> New Entry
+                    </button>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search-entries" placeholder="Search entries...">
+                            <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" id="filter-category">
+                            <option value="">All Categories</option>
+                            <option value="personal">Personal</option>
+                            <option value="work">Work</option>
+                            <option value="ideas">Ideas</option>
+                            <option value="memories">Memories</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning" id="no-entries-alert" style="display: none;">
+                    No entries found. Create your first journal entry!
+                </div>
+                
+                <div class="row" id="entries-list">
+                    <!-- Entries will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Entry Editor View -->
+            <div id="editor-view" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="editor-title"><i class="fas fa-edit me-2"></i>New Entry</h2>
+                    <div>
+                        <button class="btn btn-outline-secondary me-2" id="cancel-edit">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button class="btn btn-success" id="save-entry">
+                            <i class="fas fa-save me-1"></i> Save
+                        </button>
+                    </div>
+                </div>
+                
+                <form id="entry-form">
+                    <input type="hidden" id="entry-id">
+                    <div class="mb-3">
+                        <label for="entry-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="entry-title" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="entry-date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="entry-date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="entry-category" class="form-label">Category</label>
+                            <select class="form-select" id="entry-category">
+                                <option value="personal">Personal</option>
+                                <option value="work">Work</option>
+                                <option value="ideas">Ideas</option>
+                                <option value="memories">Memories</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="entry-content" class="form-label">Content</label>
+                        <textarea class="form-control" id="entry-content" rows="10" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mood</label>
+                        <div class="btn-group mood-selector" role="group">
+                            <input type="radio" class="btn-check" name="entry-mood" id="mood-happy" value="happy" autocomplete="off">
+                            <label class="btn btn-outline-success" for="mood-happy"><i class="fas fa-smile"></i> Happy</label>
+
+                            <input type="radio" class="btn-check" name="entry-mood" id="mood-neutral" value="neutral" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="mood-neutral"><i class="fas fa-meh"></i> Neutral</label>
+
+                            <input type="radio" class="btn-check" name="entry-mood" id="mood-sad" value="sad" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="mood-sad"><i class="fas fa-frown"></i> Sad</label>
+
+                            <input type="radio" class="btn-check" name="entry-mood" id="mood-excited" value="excited" autocomplete="off">
+                            <label class="btn btn-outline-warning" for="mood-excited"><i class="fas fa-grin-stars"></i> Excited</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="entry-tags" class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-control" id="entry-tags" placeholder="e.g., travel, family, project">
+                    </div>
+                    
+                    <!-- Reminder Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Reminder</label>
+                        <div class="d-flex align-items-center">
+                            <button type="button" class="btn btn-outline-info me-2" id="set-reminder-btn">
+                                <i class="fas fa-bell me-1"></i> Set Reminder
+                            </button>
+                            <span id="reminder-display" class="text-muted">No reminder set</span>
+                        </div>
+                        <input type="hidden" id="reminder-data">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Entry Detail View -->
+            <div id="detail-view" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="detail-title"><i class="fas fa-book-open me-2"></i>Entry Details</h2>
+                    <div>
+                        <button class="btn btn-outline-primary me-2" id="edit-entry-btn">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </button>
+                        <button class="btn btn-outline-danger" id="delete-entry-btn">
+                            <i class="fas fa-trash me-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span id="detail-date" class="text-muted"></span>
+                            <span class="badge bg-primary" id="detail-category"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="badge bg-light text-dark me-1" id="detail-mood"></span>
+                            <span id="detail-tags"></span>
+                        </div>
+                        <div id="detail-content" class="journal-content"></div>
+                        
+                        <!-- Reminder Display -->
+                        <div id="detail-reminder" class="mt-4" style="display: none;">
+                            <h5><i class="fas fa-bell me-2"></i>Reminder</h5>
+                            <div class="alert alert-info">
+                                <div><strong>Date:</strong> <span id="reminder-date-display"></span></div>
+                                <div><strong>Message:</strong> <span id="reminder-message-display"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline-secondary" id="back-to-list">
+                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="toast-notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toast-title">Notification</strong>
+                <small id="toast-time">Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyALu9tQp9efVAxnO_sjAUMHWE-erYOV5kQ",
+            authDomain: "note-95ae6.firebaseapp.com",
+            projectId: "note-95ae6",
+            storageBucket: "note-95ae6.appspot.com",
+            messagingSenderId: "1053732035378",
+            appId: "1:1053732035378:web:715ca208bc9df81e56152b",
+            measurementId: "G-G0QBEKXSML"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+        const reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
+        const profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
+        const toastNotification = new bootstrap.Toast(document.getElementById('toast-notification'));
+
+        // UI State
+        let currentUser = null;
+        let currentView = 'home';
+        let currentEntryId = null;
+        let currentReminder = null;
+
+        // Constants
+        const ROLES = {
+            ADMIN: 'admin',
+            USER: 'user'
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            checkAuthState();
+        });
+
+        function setupEventListeners() {
+            // Auth related
+            document.getElementById('login-link').addEventListener('click', showLoginModal);
+            document.getElementById('register-link').addEventListener('click', showRegisterModal);
+            document.getElementById('logout-link').addEventListener('click', logoutUser);
+            document.getElementById('show-register').addEventListener('click', showRegisterFromLogin);
+            document.getElementById('show-login').addEventListener('click', showLoginFromRegister);
+            document.getElementById('profile-link').addEventListener('click', showProfile);
+            
+            // Forms
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                loginUser();
+            });
+            document.getElementById('register-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                registerUser();
+            });
+            document.getElementById('reminder-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                setReminder();
+            });
+            document.getElementById('profile-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateProfile();
+            });
+            
+            // Navigation
+            document.getElementById('nav-home').addEventListener('click', showHomeView);
+            document.getElementById('nav-new').addEventListener('click', showNewEntryView);
+            document.getElementById('new-entry-btn').addEventListener('click', showNewEntryView);
+            document.getElementById('cancel-edit').addEventListener('click', showHomeView);
+            document.getElementById('back-to-list').addEventListener('click', showHomeView);
+            document.getElementById('nav-admin').addEventListener('click', showAdminView);
+            document.getElementById('back-to-home').addEventListener('click', showHomeView);
+            
+            // Entry actions
+            document.getElementById('save-entry').addEventListener('click', function(e) {
+                e.preventDefault();
+                saveJournalEntry();
+            });
+            document.getElementById('edit-entry-btn').addEventListener('click', editCurrentEntry);
+            document.getElementById('delete-entry-btn').addEventListener('click', deleteCurrentEntry);
+            
+            // Reminder
+            document.getElementById('set-reminder-btn').addEventListener('click', showReminderModal);
+            
+            // Search and filter
+            document.getElementById('search-btn').addEventListener('click', searchEntries);
+            document.getElementById('search-entries').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') searchEntries();
+            });
+            document.getElementById('filter-category').addEventListener('change', filterEntries);
+        }
+
+        // Authentication Functions
+        function checkAuthState() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // Get user role from Firestore
+                    db.collection('users').doc(user.uid).get()
+                        .then(doc => {
+                            if (doc.exists) {
+                                currentUser = {
+                                    uid: user.uid,
+                                    email: user.email,
+                                    displayName: user.displayName || user.email.split('@')[0],
+                                    role: doc.data().role || ROLES.USER
+                                };
+                                updateUIForAuth(true);
+                                loadJournalEntries();
+                            } else {
+                                // If no user doc exists, create one with default role
+                                const userData = {
+                                    name: user.displayName || user.email.split('@')[0],
+                                    email: user.email,
+                                    role: ROLES.USER,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                };
+                                
+                                return db.collection('users').doc(user.uid).set(userData)
+                                    .then(() => {
+                                        currentUser = {
+                                            uid: user.uid,
+                                            email: user.email,
+                                            displayName: user.displayName || user.email.split('@')[0],
+                                            role: ROLES.USER
+                                        };
+                                        updateUIForAuth(true);
+                                        loadJournalEntries();
+                                    });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error getting user document:', error);
+                            showToast('Error', 'Failed to load user data', 'danger');
+                        });
+                } else {
+                    currentUser = null;
+                    updateUIForAuth(false);
+                    showHomeView();
+                }
+            });
+        }
+
+        function updateUIForAuth(isLoggedIn) {
+            const authLinks = document.getElementById('auth-links');
+            const userActions = document.getElementById('user-actions');
+            const usernameDisplay = document.getElementById('username-display');
+            const adminNavItems = document.querySelectorAll('.admin-only');
+            
+            if (isLoggedIn) {
+                authLinks.style.display = 'none';
+                userActions.style.display = 'block';
+                usernameDisplay.textContent = currentUser.displayName || currentUser.email.split('@')[0];
+                
+                // Show admin features if user is admin
+                if (currentUser.role === ROLES.ADMIN) {
+                    adminNavItems.forEach(item => item.style.display = 'block');
+                    document.getElementById('nav-admin').classList.remove('d-none');
+                } else {
+                    adminNavItems.forEach(item => item.style.display = 'none');
+                    document.getElementById('nav-admin').classList.add('d-none');
+                }
+            } else {
+                authLinks.style.display = 'block';
+                userActions.style.display = 'none';
+                usernameDisplay.textContent = 'Guest';
+                adminNavItems.forEach(item => item.style.display = 'none');
+            }
+        }
+
+        function showAdminView() {
+            if (!currentUser || currentUser.role !== ROLES.ADMIN) {
+                showToast('Error', 'Admin access required', 'danger');
+                return;
+            }
+            
+            currentView = 'admin';
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('editor-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('admin-view').style.display = 'block';
+            
+            loadAllUsers();
+            loadAllEntries();
+        }
+
+        function loadAllUsers() {
+            db.collection('users').get()
+                .then(querySnapshot => {
+                    const tbody = document.querySelector('#users-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    querySnapshot.forEach(doc => {
+                        const user = doc.data();
+                        const userId = doc.id;
+                        const joinDate = user.createdAt?.toDate().toLocaleDateString() || 'N/A';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>
+                                <select class="form-select form-select-sm role-select" data-userid="${userId}">
+                                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                </select>
+                            </td>
+                            <td>${joinDate}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger delete-user" data-userid="${userId}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                    // Add event listeners for role changes
+                    document.querySelectorAll('.role-select').forEach(select => {
+                        select.addEventListener('change', function() {
+                            updateUserRole(this.dataset.userid, this.value);
+                        });
+                    });
+                    
+                    // Add event listeners for delete buttons
+                    document.querySelectorAll('.delete-user').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            deleteUser(this.dataset.userid);
+                        });
+                    });
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load users: ' + error.message, 'danger');
+                });
+        }
+
+        function updateUserRole(userId, newRole) {
+            db.collection('users').doc(userId).update({
+                role: newRole
+            })
+            .then(() => {
+                showToast('Success', 'User role updated', 'success');
+                // If current user updated their own role, refresh
+                if (currentUser && currentUser.uid === userId) {
+                    currentUser.role = newRole;
+                    updateUIForAuth(true);
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to update role: ' + error.message, 'danger');
+            });
+        }
+
+        function deleteUser(userId) {
+            if (currentUser && currentUser.uid === userId) {
+                showToast('Error', 'You cannot delete your own account', 'danger');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this user? All their entries will also be deleted.')) return;
+            
+            // First delete all user's entries
+            db.collection('journalEntries')
+                .where('userId', '==', userId)
+                .get()
+                .then(querySnapshot => {
+                    const batch = db.batch();
+                    querySnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    return batch.commit();
+                })
+                .then(() => {
+                    // Then delete the user document
+                    return db.collection('users').doc(userId).delete();
+                })
+                .then(() => {
+                    showToast('Success', 'User deleted', 'success');
+                    loadAllUsers();
+                    loadAllEntries();
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to delete user: ' + error.message, 'danger');
+                });
+        }
+
+        function loadAllEntries() {
+            db.collection('journalEntries')
+                .orderBy('date', 'desc')
+                .get()
+                .then(querySnapshot => {
+                    const tbody = document.querySelector('#all-entries-table tbody');
+                    tbody.innerHTML = '';
+                    
+                    querySnapshot.forEach(doc => {
+                        const entry = doc.data();
+                        const entryId = doc.id;
+                        const entryDate = entry.date?.toDate().toLocaleDateString() || 'N/A';
+                        
+                        // Get user name
+                        db.collection('users').doc(entry.userId).get()
+                            .then(userDoc => {
+                                const userName = userDoc.exists ? userDoc.data().name : 'Unknown';
+                                
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td>${entry.title}</td>
+                                    <td>${userName}</td>
+                                    <td>${entryDate}</td>
+                                    <td><span class="badge bg-${getCategoryColor(entry.category)}">${entry.category}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-entry" data-entryid="${entryId}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-entry" data-entryid="${entryId}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                
+                                tbody.appendChild(tr);
+                                
+                                // Add event listeners
+                                tr.querySelector('.view-entry').addEventListener('click', function() {
+                                    showEntryDetail(this.dataset.entryid);
+                                });
+                                
+                                tr.querySelector('.delete-entry').addEventListener('click', function() {
+                                    if (confirm('Are you sure you want to delete this entry?')) {
+                                        db.collection('journalEntries').doc(this.dataset.entryid).delete()
+                                            .then(() => {
+                                                showToast('Success', 'Entry deleted', 'success');
+                                                loadAllEntries();
+                                            });
+                                    }
+                                });
+                            });
+                    });
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load entries: ' + error.message, 'danger');
+                });
+        }
+
+        function showLoginModal(e) {
+            if (e) e.preventDefault();
+            loginModal.show();
+        }
+
+        function showRegisterModal(e) {
+            if (e) e.preventDefault();
+            registerModal.show();
+        }
+
+        function showRegisterFromLogin(e) {
+            e.preventDefault();
+            loginModal.hide();
+            registerModal.show();
+        }
+
+        function showLoginFromRegister(e) {
+            e.preventDefault();
+            registerModal.hide();
+            loginModal.show();
+        }
+
+        function showProfile(e) {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showToast('Error', 'You must be logged in to view your profile', 'danger');
+                return;
+            }
+            
+            // Get user data from Firestore
+            db.collection('users').doc(currentUser.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // Populate profile form
+                        document.getElementById('profile-name').value = userData.name || currentUser.displayName || '';
+                        document.getElementById('profile-email').value = currentUser.email;
+                        document.getElementById('profile-role').value = userData.role || 'user';
+                        
+                        // Show modal
+                        profileModal.show();
+                    } else {
+                        showToast('Error', 'User data not found', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load profile: ' + error.message, 'danger');
+                });
+        }
+
+        function updateProfile() {
+            const newName = document.getElementById('profile-name').value.trim();
+            
+            if (!newName) {
+                showToast('Error', 'Name cannot be empty', 'danger');
+                return;
+            }
+            
+            // Update in Firebase Auth
+            currentUser.updateProfile({
+                displayName: newName
+            }).then(() => {
+                // Update in Firestore
+                return db.collection('users').doc(currentUser.uid).update({
+                    name: newName
+                });
+            }).then(() => {
+                // Update local state
+                currentUser.displayName = newName;
+                document.getElementById('username-display').textContent = newName;
+                
+                showToast('Success', 'Profile updated successfully', 'success');
+                profileModal.hide();
+            }).catch(error => {
+                showToast('Error', 'Failed to update profile: ' + error.message, 'danger');
+            });
+        }
+
+        function loginUser() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            
+            if (!email || !password) {
+                showToast('Error', 'Please enter both email and password', 'danger');
+                return;
+            }
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    showToast('Success', 'Logged in successfully', 'success');
+                    loginModal.hide();
+                })
+                .catch(error => {
+                    showToast('Error', error.message, 'danger');
+                });
+        }
+
+        function registerUser() {
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value.trim();
+            const confirm = document.getElementById('register-confirm').value.trim();
+            const role = document.querySelector('input[name="register-role"]:checked').value;
+            
+            if (!name || !email || !password || !confirm) {
+                showToast('Error', 'Please fill all required fields', 'danger');
+                return;
+            }
+            
+            if (password !== confirm) {
+                showToast('Error', 'Passwords do not match', 'danger');
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(cred => {
+                    // Set display name
+                    return cred.user.updateProfile({
+                        displayName: name
+                    }).then(() => {
+                        // Save additional user data in Firestore
+                        return db.collection('users').doc(cred.user.uid).set({
+                            name: name,
+                            email: email,
+                            role: role,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
+                })
+                .then(() => {
+                    showToast('Success', 'Account created successfully', 'success');
+                    registerModal.hide();
+                })
+                .catch(error => {
+                    showToast('Error', error.message, 'danger');
+                });
+        }
+
+        function logoutUser(e) {
+            e.preventDefault();
+            auth.signOut()
+                .then(() => {
+                    showToast('Success', 'Logged out successfully', 'success');
+                })
+                .catch(error => {
+                    showToast('Error', error.message, 'danger');
+                });
+        }
+
+        // Journal Entry Functions
+        function loadJournalEntries() {
+            if (!currentUser) {
+                document.getElementById('entries-list').innerHTML = '';
+                document.getElementById('no-entries-alert').style.display = 'block';
+                return;
+            }
+            
+            db.collection('journalEntries')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('date', 'desc')
+                .get()
+                .then(querySnapshot => {
+                    const entriesList = document.getElementById('entries-list');
+                    entriesList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        document.getElementById('no-entries-alert').style.display = 'block';
+                        return;
+                    }
+                    
+                    document.getElementById('no-entries-alert').style.display = 'none';
+                    
+                    querySnapshot.forEach(doc => {
+                        const entry = doc.data();
+                        const entryId = doc.id;
+                        const entryDate = new Date(entry.date.seconds * 1000).toLocaleDateString();
+                        
+                        const entryCard = document.createElement('div');
+                        entryCard.className = 'col-md-6 col-lg-4 entry-card';
+                        entryCard.innerHTML = `
+                            <div class="card journal-card" data-id="${entryId}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${entry.title}</h5>
+                                    <p class="card-text">${entry.content.substring(0, 100)}${entry.content.length > 100 ? '...' : ''}</p>
+                                    ${entry.reminder ? '<span class="badge bg-info reminder-badge"><i class="fas fa-bell"></i></span>' : ''}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">${entryDate}</small>
+                                        <span class="badge bg-${getCategoryColor(entry.category)}">${entry.category}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        entryCard.addEventListener('click', () => showEntryDetail(entryId));
+                        entriesList.appendChild(entryCard);
+                    });
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load entries: ' + error.message, 'danger');
+                });
+        }
+
+        function showEntryDetail(entryId) {
+            if (!currentUser) return;
+            
+            db.collection('journalEntries').doc(entryId).get()
+                .then(doc => {
+                    if (!doc.exists) {
+                        showToast('Error', 'Entry not found', 'danger');
+                        return;
+                    }
+                    
+                    const entry = doc.data();
+                    
+                    // Check if the current user owns this entry or is admin
+                    if (entry.userId !== currentUser.uid && currentUser.role !== ROLES.ADMIN) {
+                        showToast('Error', 'You do not have permission to view this entry', 'danger');
+                        return;
+                    }
+                    
+                    currentEntryId = entryId;
+                    currentView = 'detail';
+                    
+                    // Update UI to show detail view
+                    document.getElementById('home-view').style.display = 'none';
+                    document.getElementById('editor-view').style.display = 'none';
+                    document.getElementById('detail-view').style.display = 'block';
+                    
+                    // Populate detail view
+                    const entryDate = new Date(entry.date.seconds * 1000);
+                    document.getElementById('detail-title').textContent = entry.title;
+                    document.getElementById('detail-date').textContent = entryDate.toLocaleDateString('en-US', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                    document.getElementById('detail-category').textContent = entry.category;
+                    document.getElementById('detail-content').textContent = entry.content;
+                    
+                    // Mood display
+                    const moodBadge = document.getElementById('detail-mood');
+                    moodBadge.textContent = '';
+                    moodBadge.className = 'badge bg-light text-dark me-1';
+                    
+                    if (entry.mood) {
+                        moodBadge.textContent = getMoodText(entry.mood);
+                        moodBadge.classList.add(`bg-${getMoodColor(entry.mood)}`);
+                    }
+                    
+                    // Tags display
+                    const tagsContainer = document.getElementById('detail-tags');
+                    tagsContainer.innerHTML = '';
+                    
+                    if (entry.tags && entry.tags.length > 0) {
+                        entry.tags.split(',').forEach(tag => {
+                            const trimmedTag = tag.trim();
+                            if (trimmedTag) {
+                                const tagElement = document.createElement('span');
+                                tagElement.className = 'badge bg-secondary me-1';
+                                tagElement.textContent = trimmedTag;
+                                tagsContainer.appendChild(tagElement);
+                            }
+                        });
+                    }
+                    
+                    // Reminder display
+                    const reminderContainer = document.getElementById('detail-reminder');
+                    if (entry.reminder) {
+                        reminderContainer.style.display = 'block';
+                        const reminderDate = new Date(entry.reminder.date.seconds * 1000);
+                        document.getElementById('reminder-date-display').textContent = reminderDate.toLocaleString();
+                        document.getElementById('reminder-message-display').textContent = entry.reminder.message || 'No message';
+                    } else {
+                        reminderContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load entry: ' + error.message, 'danger');
+                });
+        }
+
+        function showNewEntryView() {
+            if (!currentUser) {
+                showLoginModal(new Event('click'));
+                return;
+            }
+            
+            currentView = 'editor';
+            currentEntryId = null;
+            currentReminder = null;
+            
+            // Update UI
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('editor-view').style.display = 'block';
+            
+            // Reset form
+            document.getElementById('entry-form').reset();
+            document.getElementById('editor-title').textContent = 'New Entry';
+            document.getElementById('entry-date').valueAsDate = new Date();
+            document.getElementById('reminder-display').textContent = 'No reminder set';
+            document.getElementById('reminder-data').value = '';
+        }
+
+        function editCurrentEntry() {
+            if (!currentEntryId) return;
+            
+            db.collection('journalEntries').doc(currentEntryId).get()
+                .then(doc => {
+                    if (!doc.exists) {
+                        showToast('Error', 'Entry not found', 'danger');
+                        return;
+                    }
+                    
+                    const entry = doc.data();
+                    
+                    // Check if the current user owns this entry or is admin
+                    if (entry.userId !== currentUser.uid && currentUser.role !== ROLES.ADMIN) {
+                        showToast('Error', 'You do not have permission to edit this entry', 'danger');
+                        return;
+                    }
+                    
+                    currentView = 'editor';
+                    currentReminder = entry.reminder || null;
+                    
+                    // Update UI
+                    document.getElementById('home-view').style.display = 'none';
+                    document.getElementById('detail-view').style.display = 'none';
+                    document.getElementById('editor-view').style.display = 'block';
+                    
+                    // Populate form
+                    document.getElementById('editor-title').textContent = 'Edit Entry';
+                    document.getElementById('entry-id').value = currentEntryId;
+                    document.getElementById('entry-title').value = entry.title;
+                    
+                    const entryDate = new Date(entry.date.seconds * 1000);
+                    document.getElementById('entry-date').valueAsDate = entryDate;
+                    
+                    document.getElementById('entry-category').value = entry.category;
+                    document.getElementById('entry-content').value = entry.content;
+                    
+                    if (entry.mood) {
+                        document.querySelector(`input[name="entry-mood"][value="${entry.mood}"]`).checked = true;
+                    }
+                    
+                    if (entry.tags) {
+                        document.getElementById('entry-tags').value = entry.tags;
+                    }
+                    
+                    // Handle reminder
+                    if (entry.reminder) {
+                        document.getElementById('reminder-display').textContent = 
+                            `Set for ${new Date(entry.reminder.date.seconds * 1000).toLocaleString()}`;
+                        document.getElementById('reminder-data').value = JSON.stringify(entry.reminder);
+                    } else {
+                        document.getElementById('reminder-display').textContent = 'No reminder set';
+                        document.getElementById('reminder-data').value = '';
+                    }
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load entry for editing: ' + error.message, 'danger');
+                });
+        }
+
+        function showReminderModal() {
+            reminderModal.show();
+            
+            // If editing and has existing reminder, populate the form
+            if (currentReminder) {
+                const reminderDate = new Date(currentReminder.date.seconds * 1000);
+                const formattedDate = reminderDate.toISOString().slice(0, 16);
+                document.getElementById('reminder-date').value = formattedDate;
+                document.getElementById('reminder-message').value = currentReminder.message || '';
+            } else {
+                document.getElementById('reminder-form').reset();
+            }
+        }
+
+        function setReminder() {
+            const dateTime = document.getElementById('reminder-date').value;
+            const message = document.getElementById('reminder-message').value.trim();
+            
+            if (!dateTime) {
+                showToast('Error', 'Please select a date and time for the reminder', 'danger');
+                return;
+            }
+            
+            const reminderDate = new Date(dateTime);
+            currentReminder = {
+                date: firebase.firestore.Timestamp.fromDate(reminderDate),
+                message: message
+            };
+            
+            document.getElementById('reminder-display').textContent = `Set for ${reminderDate.toLocaleString()}`;
+            document.getElementById('reminder-data').value = JSON.stringify(currentReminder);
+            
+            reminderModal.hide();
+            showToast('Success', 'Reminder set successfully', 'success');
+        }
+
+        async function saveJournalEntry() {
+            if (!currentUser) {
+                showToast('Error', 'You must be logged in to save entries', 'danger');
+                return;
+            }
+            
+            const form = document.getElementById('entry-form');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const title = document.getElementById('entry-title').value.trim();
+            const content = document.getElementById('entry-content').value.trim();
+            const dateValue = document.getElementById('entry-date').value;
+            
+            if (!title || !content || !dateValue) {
+                showToast('Error', 'Please fill all required fields', 'danger');
+                return;
+            }
+            
+            try {
+                // Prepare base entry data with required fields
+                const entryData = {
+                    userId: currentUser.uid,  // This is crucial for security rules
+                    title: title,
+                    date: firebase.firestore.Timestamp.fromDate(new Date(dateValue)),
+                    category: document.getElementById('entry-category').value,
+                    content: content,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Add optional fields if they exist
+                const mood = document.querySelector('input[name="entry-mood"]:checked')?.value;
+                if (mood) entryData.mood = mood;
+
+                const tags = document.getElementById('entry-tags').value.trim();
+                if (tags) entryData.tags = tags;
+
+                // Add reminder if set
+                const reminderData = document.getElementById('reminder-data').value;
+                if (reminderData) {
+                    entryData.reminder = JSON.parse(reminderData);
+                }
+
+                if (currentEntryId) {
+                    // Update existing entry
+                    await db.collection('journalEntries').doc(currentEntryId).update(entryData);
+                    showToast('Success', 'Entry updated successfully', 'success');
+                } else {
+                    // Create new entry with createdAt timestamp
+                    entryData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('journalEntries').add(entryData);
+                    showToast('Success', 'Entry created successfully', 'success');
+                }
+                
+                showHomeView();
+                loadJournalEntries();
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                showToast('Error', 'Failed to save entry: ' + error.message, 'danger');
+            }
+        }
+
+        function deleteCurrentEntry() {
+            if (!currentEntryId) return;
+            
+            if (!confirm('Are you sure you want to delete this entry?')) return;
+            
+            db.collection('journalEntries').doc(currentEntryId).get()
+                .then(doc => {
+                    if (!doc.exists) {
+                        showToast('Error', 'Entry not found', 'danger');
+                        return;
+                    }
+                    
+                    const entry = doc.data();
+                    
+                    // Check if the current user owns this entry or is admin
+                    if (entry.userId !== currentUser.uid && currentUser.role !== ROLES.ADMIN) {
+                        showToast('Error', 'You do not have permission to delete this entry', 'danger');
+                        return;
+                    }
+                    
+                    // Proceed with deletion
+                    return db.collection('journalEntries').doc(currentEntryId).delete();
+                })
+                .then(() => {
+                    showToast('Success', 'Entry deleted successfully', 'success');
+                    showHomeView();
+                    loadJournalEntries();
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to delete entry: ' + error.message, 'danger');
+                });
+        }
+
+        function searchEntries() {
+            const searchTerm = document.getElementById('search-entries').value.toLowerCase();
+            const entries = document.querySelectorAll('.journal-card');
+            let found = false;
+            
+            entries.forEach(entry => {
+                const title = entry.querySelector('.card-title').textContent.toLowerCase();
+                const content = entry.querySelector('.card-text').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || content.includes(searchTerm)) {
+                    entry.parentElement.style.display = 'block';
+                    found = true;
+                } else {
+                    entry.parentElement.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('no-entries-alert').style.display = found ? 'none' : 'block';
+        }
+
+        function filterEntries() {
+            const category = document.getElementById('filter-category').value;
+            const entries = document.querySelectorAll('.journal-card');
+            let found = false;
+            
+            entries.forEach(entry => {
+                const entryCategory = entry.querySelector('.badge').textContent.toLowerCase();
+                
+                if (!category || entryCategory === category.toLowerCase()) {
+                    entry.parentElement.style.display = 'block';
+                    found = true;
+                } else {
+                    entry.parentElement.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('no-entries-alert').style.display = found ? 'none' : 'block';
+        }
+
+        // View Management
+        function showHomeView() {
+            currentView = 'home';
+            currentEntryId = null;
+            
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('editor-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('admin-view').style.display = 'none';
+            
+            // Reset search and filter
+            document.getElementById('search-entries').value = '';
+            document.getElementById('filter-category').value = '';
+            
+            loadJournalEntries();
+        }
+
+        // Helper Functions
+        function showToast(title, message, type) {
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastTime = document.getElementById('toast-time');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toastTime.textContent = new Date().toLocaleTimeString();
+            
+            // Set background color based on type
+            const toastHeader = document.querySelector('#toast-notification .toast-header');
+            toastHeader.className = `toast-header ${type === 'success' ? 'bg-success text-white' : type === 'danger' ? 'bg-danger text-white' : 'bg-primary text-white'}`;
+            
+            toastNotification.show();
+        }
+
+        function getCategoryColor(category) {
+            switch (category.toLowerCase()) {
+                case 'work': return 'info';
+                case 'ideas': return 'warning';
+                case 'memories': return 'success';
+                default: return 'primary';
+            }
+        }
+
+        function getMoodColor(mood) {
+            switch (mood) {
+                case 'happy': return 'success';
+                case 'neutral': return 'secondary';
+                case 'sad': return 'danger';
+                case 'excited': return 'warning';
+                default: return 'light';
+            }
+        }
+
+        function getMoodText(mood) {
+            switch (mood) {
+                case 'happy': return 'Happy';
+                case 'neutral': return 'Neutral';
+                case 'sad': return 'Sad';
+                case 'excited': return 'Excited';
+                default: return '';
+            }
+        }
+    </script>
+</body>
+</html>
